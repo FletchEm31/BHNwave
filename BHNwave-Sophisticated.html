@@ -5,45 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BHNwave Sophisticated — escalating tone complexity</title>
 <style>
-  :root{ color-scheme:dark; }
+  :root{
+    color-scheme:dark;
+    --bg:#2e3320; --bg2:#3a4128;
+    --panel:#cabb8c; --ink:#23280f;
+    --green:#5a7a2f; --green-d:#3f5720;
+    --yellow:#f2c12e; --red:#a8341f;
+    --cream:#efe6c8; --line:#16190a;
+  }
   *{ box-sizing:border-box; }
-  body{ font-family:ui-monospace,"Cascadia Code",Consolas,monospace; background:#070b11; color:#e6edf3; margin:0; padding:1.5rem; line-height:1.5; }
+  /* pixel/arcade look via blocky monospace + crisp rendering — stays 100% offline */
+  body{
+    font-family:"Courier New",ui-monospace,monospace; font-weight:bold; letter-spacing:.5px;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 2px, transparent 2px 4px), var(--bg);
+    color:var(--cream); margin:0; padding:1.4rem; line-height:1.5; image-rendering:pixelated;
+  }
   .wrap{ max-width:900px; margin:0 auto; }
-  h1{ font-size:1.7rem; margin:0 0 .1rem; letter-spacing:.5px; } h1 .w{ color:#58a6ff; }
-  .sub{ color:#8b949e; font-size:.82rem; margin-bottom:1rem; }
-  .fun{ background:#1c1407; border:1px solid #9e6a03; color:#e3b341; font-size:.78rem; border-radius:8px; padding:.5rem .8rem; margin-bottom:1rem; }
-  .panel{ background:#10161f; border:1px solid #232b36; border-radius:12px; padding:1rem 1.3rem; margin-bottom:1rem; }
-  h2{ font-size:1rem; margin:0 0 .55rem; color:#58a6ff; }
-  textarea,input[type=text],input[type=password],select{ background:#070b11; color:#e6edf3; border:1px solid #232b36; border-radius:8px; padding:.55rem .7rem; font:inherit; }
+  h1{ font-size:2.1rem; margin:0 0 .35rem; letter-spacing:2px; color:var(--yellow);
+      text-shadow:3px 3px 0 var(--line), 5px 5px 0 var(--green-d); text-transform:uppercase; }
+  h1 .w{ color:var(--cream); }
+  .sub{ color:var(--cream); font-size:.76rem; margin-bottom:1rem; line-height:1.6; opacity:.92; }
+  .fun{ background:var(--yellow); border:3px solid var(--line); color:var(--ink); font-size:.72rem;
+        padding:.55rem .8rem; margin-bottom:1rem; box-shadow:4px 4px 0 var(--line); text-transform:uppercase; }
+  .panel{ background:var(--panel); border:3px solid var(--line); padding:1rem 1.2rem; margin-bottom:1.1rem;
+          color:var(--ink); box-shadow:5px 5px 0 rgba(0,0,0,.45); position:relative; }
+  h2{ font-size:.95rem; margin:0 0 .6rem; color:var(--green-d); text-transform:uppercase; letter-spacing:1px;
+      border-bottom:3px solid var(--green-d); padding-bottom:.3rem; }
+  textarea,input[type=text],input[type=password],select{ background:var(--bg2); color:var(--cream);
+      border:3px solid var(--line); padding:.5rem .6rem; font-family:inherit; font-weight:bold; letter-spacing:.5px; }
   textarea{ width:100%; min-height:70px; resize:vertical; }
-  label{ color:#8b949e; }
-  button{ background:#238636; color:#fff; border:0; border-radius:8px; padding:.55rem 1rem; font:inherit; cursor:pointer; margin:.45rem .4rem 0 0; }
-  button.alt{ background:#1f6feb; } button.warn{ background:#9e6a03; } button.stop{ background:#7d2b2b; }
-  button:disabled{ opacity:.4; cursor:not-allowed; }
-  .recv{ font-size:1.15rem; color:#d29922; padding:.4rem 0; min-height:1.4rem; word-break:break-word; }
-  .status{ color:#6e7681; font-size:.8rem; margin-top:.5rem; min-height:1rem; }
-  .err{ color:#f85149; } .ok{ color:#7ee787; }
-  .row{ margin:.45rem 0; display:flex; gap:1.2rem; flex-wrap:wrap; align-items:center; }
-  .tog{ display:inline-flex; gap:.4rem; align-items:center; background:#070b11; border:1px solid #232b36; border-radius:8px; padding:.4rem .7rem; }
-  .count{ color:#6e7681; font-size:.75rem; text-align:right; }
-  .prof{ color:#8b949e; font-size:.76rem; margin-top:.4rem; min-height:1rem; }
+  label{ color:var(--ink); font-weight:bold; text-transform:uppercase; font-size:.76rem; letter-spacing:.5px; }
+  button{ background:var(--green); color:var(--cream); border:3px solid var(--line); padding:.5rem 1rem;
+      font-family:inherit; font-weight:bold; cursor:pointer; margin:.45rem .4rem 0 0; text-transform:uppercase;
+      letter-spacing:.5px; box-shadow:3px 3px 0 var(--line); transition:transform .03s, box-shadow .03s; }
+  button:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--line); }
+  button.alt{ background:var(--green-d); } button.warn{ background:var(--yellow); color:var(--ink); } button.stop{ background:var(--red); }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .recv{ font-size:1.1rem; color:var(--green-d); padding:.4rem 0; min-height:1.4rem; word-break:break-word; }
+  .status{ color:#5a5236; font-size:.74rem; margin-top:.5rem; min-height:1rem; }
+  .err{ color:var(--red); } .ok{ color:var(--green-d); }
+  .row{ margin:.45rem 0; display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
+  .tog{ display:inline-flex; gap:.4rem; align-items:center; background:var(--bg2); color:var(--cream);
+        border:3px solid var(--line); padding:.35rem .6rem; }
+  .tog label{ color:var(--cream); }
+  .count{ color:#5a5236; font-size:.72rem; text-align:right; }
+  .prof{ color:#5a5236; font-size:.74rem; margin-top:.4rem; min-height:1rem; }
+  /* word codebook badge pinned top-right of a panel */
+  .corner{ position:absolute; top:.8rem; right:1rem; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>BHN<span class="w">wave</span> · Sophisticated</h1>
+  <h1>BHN<span class="w">wave</span></h1>
+  <div style="color:var(--yellow);font-size:.82rem;margin:-.15rem 0 .5rem;letter-spacing:1px;text-transform:uppercase">@FletchKetchem | @FletchEm31</div>
   <div class="sub">The escalating-complexity edition. Pick a voice profile, then a <b>sophistication tier</b> (Plain → 33% → 66% → 99.99%) that layers in harmonics, honks, slides, sub-bass and accent flourishes. Higher tiers sound incredible; the top tier is a listen/record showpiece where decode gets unreliable. 100% offline.</div>
   <div class="fun">🎲 <b>For fun / puzzles / shared codes.</b> A toy cipher &mdash; not for real account passwords (a recording can be decoded by anyone who has it).</div>
 
   <div class="panel">
     <h2 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-      <span>Sound Outgoing <span style="font-weight:normal;color:#6e7681;font-size:.8rem">— pick voice, tier, &amp; mode</span></span>
-      <span id="passWrap" style="display:none;font-weight:normal;font-size:.82rem"><label style="color:#8b949e">🔑 Passphrase:</label> <input type="password" id="pass" placeholder="shared key" style="width:180px"></span>
+      <span>Sound Outgoing</span>
+      <span id="passWrap" style="display:none;font-weight:normal;font-size:.78rem"><label style="color:var(--green-d)">🔑 Passphrase:</label> <input type="password" id="pass" placeholder="shared key" style="width:170px"></span>
     </h2>
     <div class="row">
       <div class="tog"><input type="radio" name="mode" id="mDirect" value="direct" checked onchange="toggleMode()"><label for="mDirect">Direct</label></div>
       <div class="tog"><input type="radio" name="mode" id="mEnc" value="enc" onchange="toggleMode()"><label for="mEnc">🔒 Encrypted</label></div>
-      <div class="tog"><input type="checkbox" id="wordMode" checked onchange="wordModeOn=this.checked"><label for="wordMode">📖 Word codebook (auto)</label></div>
+      <div class="tog"><input type="checkbox" id="wordMode" checked onchange="wordModeOn=this.checked"><label for="wordMode">Word codebook (auto)</label></div>
+    </div>
+    <div class="row">
+      <select id="soph" onchange="describeProfile()">
+        <option value="0">Plain (baseline, cleanest decode)</option>
+        <option value="33" selected>33% — richer (harmonics + varied length)</option>
+        <option value="66">66% — alive (layers, slides, sub-bass, accents)</option>
+        <option value="100">99.99% — ALL OUT (showpiece; decode may suffer)</option>
+      </select>
+      <span class="prof" id="sophWarn"></span>
     </div>
     <div class="row">
       <select id="profile" onchange="describeProfile()">
@@ -57,21 +92,7 @@
       <button class="warn" onclick="testSound()">🔊 Test this sound</button>
     </div>
     <div class="prof" id="profDesc"></div>
-    <div class="row" style="margin-top:.7rem">
-      <label>Sophistication:</label>
-      <select id="soph" onchange="describeProfile()">
-        <option value="0">Plain (baseline, cleanest decode)</option>
-        <option value="33" selected>33% — richer (harmonics + varied length)</option>
-        <option value="66">66% — alive (layers, slides, sub-bass, accents)</option>
-        <option value="100">99.99% — ALL OUT (showpiece; decode may suffer)</option>
-      </select>
-      <span class="prof" id="sophWarn"></span>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h2>1. Message</h2>
-    <textarea id="msg" maxlength="200" placeholder="type 1–200 characters (a–z, 0–9, spaces)" oninput="updateCount()"></textarea>
+    <textarea id="msg" maxlength="200" placeholder="type 1–200 characters (a–z, 0–9, spaces)" oninput="updateCount()" style="margin-top:.7rem"></textarea>
     <div class="count" id="count">0 / 200</div>
     <button class="alt" onclick="transmit()">📡 Transmit tones</button>
     <button class="warn" onclick="speakMsg()">🔊 Speak aloud (English)</button>
@@ -80,11 +101,20 @@
   </div>
 
   <div class="panel">
-    <h2>2. Sound Incoming (listen to tones)</h2>
+    <h2>Sound Incoming (listen to tones)</h2>
     <button id="rxBtn" onclick="toggleListen()">🎙 Start listening</button>
     <button class="warn" onclick="speakRecv()">🔊 Speak result</button>
     <div class="recv" id="recv">(decoded message appears here)</div>
     <div class="status" id="rxStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+      <span>Word Codebook (197 words)</span>
+      <button class="alt" style="font-size:.7rem;padding:.3rem .6rem;margin:0" onclick="toggleCodebook()">Show / Hide</button>
+    </h2>
+    <div class="status" style="margin-top:0">Words in this list transmit as fast 3-tone codes (auto). Anything else is spelled out letter-by-letter. Both ends share the same list — it's baked into this file.</div>
+    <div id="codebook" style="display:none;margin-top:.6rem;font-size:.78rem;line-height:1.9;color:var(--ink);word-spacing:.2rem"></div>
   </div>
 
   <div class="status">Record &amp; replay: hit Transmit, record the audio (any recorder), save it. To recover: open BHNwave, set the same profile + mode (+ passphrase if encrypted), Start listening, and play the recording near the mic. Note: the moody profiles (Warble, Dune) decode less reliably than Clean Beeps — use Clean Beeps when a clean decode matters.</div>
@@ -99,6 +129,13 @@ function mode(){ return document.querySelector('input[name=mode]:checked').value
 function profile(){ return $('profile').value; }
 function updateCount(){ $('count').textContent=$('msg').value.length+' / 200'; }
 function toggleMode(){ $('passWrap').style.display = mode()==='enc' ? 'inline' : 'none'; }
+function toggleCodebook(){
+  const el=$('codebook');
+  if(el.style.display==='none'){
+    if(!el.dataset.filled){ el.textContent = WORDLIST.join('  ·  '); el.dataset.filled='1'; }
+    el.style.display='block';
+  } else { el.style.display='none'; }
+}
 
 const PROF_DESC={
   clean:"Pure sine tones, slow and well-spaced. Calm musical beeps — the most reliable to decode.",
