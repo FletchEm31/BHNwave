@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BHNwave — beep-tone cipher language</title>
+<style>
+  :root{ color-scheme:dark; }
+  *{ box-sizing:border-box; }
+  body{ font-family:ui-monospace,"Cascadia Code",Consolas,monospace; background:#070b11; color:#e6edf3; margin:0; padding:1.5rem; line-height:1.5; }
+  .wrap{ max-width:900px; margin:0 auto; }
+  h1{ font-size:1.7rem; margin:0 0 .1rem; letter-spacing:.5px; } h1 .w{ color:#58a6ff; }
+  .sub{ color:#8b949e; font-size:.82rem; margin-bottom:1rem; }
+  .fun{ background:#1c1407; border:1px solid #9e6a03; color:#e3b341; font-size:.78rem; border-radius:8px; padding:.5rem .8rem; margin-bottom:1rem; }
+  .panel{ background:#10161f; border:1px solid #232b36; border-radius:12px; padding:1rem 1.3rem; margin-bottom:1rem; }
+  h2{ font-size:1rem; margin:0 0 .55rem; color:#58a6ff; }
+  textarea,input[type=text],input[type=password],select{ background:#070b11; color:#e6edf3; border:1px solid #232b36; border-radius:8px; padding:.55rem .7rem; font:inherit; }
+  textarea{ width:100%; min-height:70px; resize:vertical; }
+  label{ color:#8b949e; }
+  button{ background:#238636; color:#fff; border:0; border-radius:8px; padding:.55rem 1rem; font:inherit; cursor:pointer; margin:.45rem .4rem 0 0; }
+  button.alt{ background:#1f6feb; } button.warn{ background:#9e6a03; } button.stop{ background:#7d2b2b; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
+  .recv{ font-size:1.15rem; color:#d29922; padding:.4rem 0; min-height:1.4rem; word-break:break-word; }
+  .status{ color:#6e7681; font-size:.8rem; margin-top:.5rem; min-height:1rem; }
+  .err{ color:#f85149; } .ok{ color:#7ee787; }
+  .row{ margin:.45rem 0; display:flex; gap:1.2rem; flex-wrap:wrap; align-items:center; }
+  .tog{ display:inline-flex; gap:.4rem; align-items:center; background:#070b11; border:1px solid #232b36; border-radius:8px; padding:.4rem .7rem; }
+  .count{ color:#6e7681; font-size:.75rem; text-align:right; }
+  .prof{ color:#8b949e; font-size:.76rem; margin-top:.4rem; min-height:1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BHN<span class="w">wave</span></h1>
+  <div class="sub">A beep-tone cipher language. Type a message &rarr; encode (direct or encrypted) &rarr; transmit as tones &amp;/or speak aloud &rarr; record it &rarr; play it into the decoder to recover the text. 100% offline.</div>
+  <div class="fun">🎲 <b>For fun / puzzles / shared codes.</b> A toy cipher &mdash; not for real account passwords (a recording can be decoded by anyone who has it).</div>
+
+  <div class="panel">
+    <h2>Sound profile <span style="font-weight:normal;color:#6e7681;font-size:.8rem">— audition them, pick your favorite</span></h2>
+    <div class="row">
+      <select id="profile" onchange="describeProfile()">
+        <option value="clean" selected>A · Clean Beeps (slow, pure, most reliable)</option>
+        <option value="modem">B · Modem Chatter (fast bursts)</option>
+        <option value="warble">C · R2-D2 Warble (chirpy slides)</option>
+        <option value="deep">D · Deep Retro (low square-wave, 8-bit)</option>
+        <option value="dune">E · Dune Guttural (deep layered chant)</option>
+      </select>
+      <button class="warn" onclick="testSound()">🔊 Test this sound</button>
+    </div>
+    <div class="prof" id="profDesc"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Mode</h2>
+    <div class="row">
+      <div class="tog"><input type="radio" name="mode" id="mDirect" value="direct" checked onchange="toggleMode()"><label for="mDirect">Direct (anyone can decode)</label></div>
+      <div class="tog"><input type="radio" name="mode" id="mEnc" value="enc" onchange="toggleMode()"><label for="mEnc">🔒 Encrypted (needs passphrase)</label></div>
+    </div>
+    <div class="row" id="passRow" style="display:none">
+      <label>Passphrase:</label> <input type="password" id="pass" placeholder="shared key for encrypt/decrypt" style="width:340px;max-width:100%">
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>1. Message</h2>
+    <textarea id="msg" maxlength="200" placeholder="type 1–200 characters (a–z, 0–9, spaces)" oninput="updateCount()"></textarea>
+    <div class="count" id="count">0 / 200</div>
+    <button class="alt" onclick="transmit()">📡 Transmit tones</button>
+    <button class="warn" onclick="speakMsg()">🔊 Speak aloud (English)</button>
+    <button class="stop" onclick="stopAll()">■ Stop</button>
+    <div class="status" id="txStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2>2. Decode (listen to tones)</h2>
+    <button id="rxBtn" onclick="toggleListen()">🎙 Start listening</button>
+    <button class="warn" onclick="speakRecv()">🔊 Speak result</button>
+    <div class="recv" id="recv">(decoded message appears here)</div>
+    <div class="status" id="rxStatus"></div>
+  </div>
+
+  <div class="status">Record &amp; replay: hit Transmit, record the audio (any recorder), save it. To recover: open BHNwave, set the same profile + mode (+ passphrase if encrypted), Start listening, and play the recording near the mic. Note: the moody profiles (Warble, Dune) decode less reliably than Clean Beeps — use Clean Beeps when a clean decode matters.</div>
+</div>
+
+<script>
+// ===================== shared =====================
+function $(id){ return document.getElementById(id); }
+function txStatus(m,c){ const e=$('txStatus'); e.textContent=m; e.className='status'+(c?(' '+c):''); }
+function rxStatus(m,c){ const e=$('rxStatus'); e.textContent=m; e.className='status'+(c?(' '+c):''); }
+function mode(){ return document.querySelector('input[name=mode]:checked').value; }
+function profile(){ return $('profile').value; }
+function updateCount(){ $('count').textContent=$('msg').value.length+' / 200'; }
+function toggleMode(){ $('passRow').style.display = mode()==='enc' ? 'flex' : 'none'; }
+
+const PROF_DESC={
+  clean:"Pure sine tones, slow and well-spaced. Calm musical beeps — the most reliable to decode.",
+  modem:"Fast short bursts, tight gaps. Busy dial-up/fax energy. Quicker, a little less robust.",
+  warble:"Tones slide in pitch between characters — chirpy, droid-like, expressive. Fun; decodes a bit less cleanly.",
+  deep:"Lower square-wave tones — buzzy retro 8-bit computer feel. Distinct character, still decodable.",
+  dune:"Deep, detuned, layered chant with a growl — ominous Sardaukar/Fremen vibe. Moodiest by far; least reliable to decode."
+};
+function describeProfile(){ $('profDesc').textContent=PROF_DESC[profile()]; }
+describeProfile(); toggleMode(); updateCount();
+
+let audioCtx=null;
+function ctx(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000}); if(audioCtx.state==='suspended') audioCtx.resume(); return audioCtx; }
+
+// alphabet + frequency map (kept identical across profiles so decode is consistent)
+const ALPHABET=" abcdefghijklmnopqrstuvwxyz0123456789".split(""); // 37 symbols
+const BASE_F=520, STEP=90, START_F=400, END_F=3950;
+function charToFreq(ch){ const i=ALPHABET.indexOf(ch); return i<0?null:BASE_F+i*STEP; }
+function freqToChar(f){ const i=Math.round((f-BASE_F)/STEP); return (i>=0&&i<ALPHABET.length)?ALPHABET[i]:null; }
+
+// profile timing/voicing. NOTE: decode always reads the fundamental, so even "dune" maps the
+// same fundamental frequency per char; the extra layers are cosmetic voicing.
+function profileParams(){
+  switch(profile()){
+    case 'modem':  return {slot:0.09, gap:0.03, type:'sine',     layers:1, detune:0, slide:false, sub:false, dist:false};
+    case 'warble': return {slot:0.16, gap:0.05, type:'sine',     layers:1, detune:0, slide:true,  sub:false, dist:false};
+    case 'deep':   return {slot:0.16, gap:0.05, type:'square',   layers:1, detune:0, slide:false, sub:false, dist:false};
+    case 'dune':   return {slot:0.26, gap:0.07, type:'sawtooth', layers:3, detune:8, slide:true,  sub:true,  dist:true};
+    case 'clean':
+    default:       return {slot:0.18, gap:0.06, type:'sine',     layers:1, detune:0, slide:false, sub:false, dist:false};
+  }
+}
+
+let scheduled=[];
+function stopAll(){ scheduled.forEach(n=>{ try{n.stop();}catch(e){} }); scheduled=[]; if(speechSynthesis) speechSynthesis.cancel(); }
+
+function makeDistortion(c){ const ws=c.createWaveShaper(); const n=256,curve=new Float32Array(n);
+  for(let i=0;i<n;i++){ const x=i*2/n-1; curve[i]=(Math.PI+8)*x/(Math.PI+8*Math.abs(x)); } ws.curve=curve; ws.oversample='2x'; return ws; }
+
+function playTone(c, f, startT, p, dur){
+  const g=c.createGain();
+  g.gain.setValueAtTime(0.0001, startT);
+  g.gain.exponentialRampToValueAtTime(0.28/(p.layers), startT+(p.dist?0.04:0.012));
+  g.gain.setValueAtTime(0.28/(p.layers), startT+dur-0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, startT+dur);
+  let dest=g;
+  if(p.dist){ const d=makeDistortion(c); g.connect(d); d.connect(c.destination); } else { g.connect(c.destination); }
+  for(let L=0; L<p.layers; L++){
+    const o=c.createOscillator(); o.type=p.type;
+    const det=(L-(p.layers-1)/2)*p.detune;
+    o.frequency.setValueAtTime(f, startT);
+    if(p.slide && f>START_F+10) o.frequency.setValueAtTime(f*0.94, startT), o.frequency.linearRampToValueAtTime(f, startT+dur*0.4);
+    o.detune.value=det;
+    o.connect(g); o.start(startT); o.stop(startT+dur+0.01); scheduled.push(o);
+  }
+  if(p.sub){ const so=c.createOscillator(); so.type='sine'; so.frequency.value=f/2; const sg=c.createGain(); sg.gain.value=0.12;
+    sg.gain.setValueAtTime(0.0001,startT); sg.gain.linearRampToValueAtTime(0.12,startT+0.05); sg.gain.setValueAtTime(0.12,startT+dur-0.03); sg.gain.exponentialRampToValueAtTime(0.0001,startT+dur);
+    so.connect(sg).connect(c.destination); so.start(startT); so.stop(startT+dur+0.01); scheduled.push(so); }
+}
+
+function tonesFor(text){
+  const c=ctx(); const p=profileParams(); let t=c.currentTime+0.1;
+  playTone(c,START_F,t,p,p.slot); t+=p.slot+p.gap;
+  for(const ch of text){ const f=charToFreq(ch); if(f!==null){ playTone(c,f,t,p,p.slot); t+=p.slot+p.gap; } }
+  playTone(c,END_F,t,p,p.slot); t+=p.slot+p.gap;
+  return t-c.currentTime;
+}
+
+// ===================== encryption (AES-GCM, offline) =====================
+async function deriveKey(pass, salt){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:120000, hash:'SHA-256'}, km, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+function b32(bytes){ // encode bytes -> our [a-z0-9 ] alphabet-safe base32-ish (use 0-9a-v = 32 chars, no space)
+  const A="abcdefghijklmnopqrstuvwxyz012345"; let bits=0,val=0,out="";
+  for(const b of bytes){ val=(val<<8)|b; bits+=8; while(bits>=5){ out+=A[(val>>>(bits-5))&31]; bits-=5; } }
+  if(bits>0) out+=A[(val<<(5-bits))&31]; return out;
+}
+function unb32(str){ const A="abcdefghijklmnopqrstuvwxyz012345"; let bits=0,val=0; const out=[];
+  for(const ch of str){ const idx=A.indexOf(ch); if(idx<0) continue; val=(val<<5)|idx; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits-=8; } }
+  return new Uint8Array(out);
+}
+async function encryptToTokens(plain, pass){
+  const enc=new TextEncoder(); const salt=crypto.getRandomValues(new Uint8Array(8)); const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(pass, salt);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(plain)));
+  const blob=new Uint8Array(salt.length+iv.length+ct.length); blob.set(salt,0); blob.set(iv,8); blob.set(ct,20);
+  return b32(blob); // pure a-v0-5 -> transmittable
+}
+async function decryptFromTokens(tok, pass){
+  const blob=unb32(tok); const salt=blob.slice(0,8), iv=blob.slice(8,20), ct=blob.slice(20);
+  const key=await deriveKey(pass, salt);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  return new TextDecoder().decode(pt);
+}
+
+// ===================== transmit =====================
+async function transmit(){
+  stopAll();
+  let msg=$('msg').value.trim();
+  if(!msg){ txStatus('type a message first','err'); return; }
+  if(mode()==='enc'){
+    const pass=$('pass').value; if(!pass){ txStatus('enter a passphrase','err'); return; }
+    try{ msg=await encryptToTokens(msg, pass); txStatus('encrypted → transmitting '+msg.length+' tone-chars…','ok'); }
+    catch(e){ txStatus('encrypt failed: '+e,'err'); return; }
+  } else {
+    msg=msg.toLowerCase().replace(/[^a-z0-9 ]/g,'');
+    if(!msg){ txStatus('nothing valid (a–z, 0–9, space)','err'); return; }
+    txStatus('transmitting '+msg.length+' chars…','ok');
+  }
+  tonesFor(msg);
+}
+function testSound(){ stopAll(); tonesFor("abc 123"); txStatus('playing sample of profile "'+profile()+'"','ok'); }
+
+// ===================== decode =====================
+let listening=false, rafId=null, analyser=null, micStream=null, decoded="", lastSym=null, stable=0, started=false, idle=0;
+function nearest(freq){ if(Math.abs(freq-START_F)<48) return 'START'; if(Math.abs(freq-END_F)<48) return 'END'; return freqToChar(freq); }
+function startListen(){
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
+    micStream=stream; const c=ctx(); const src=c.createMediaStreamSource(stream);
+    analyser=c.createAnalyser(); analyser.fftSize=16384; analyser.smoothingTimeConstant=0; src.connect(analyser);
+    const bins=new Float32Array(analyser.frequencyBinCount);
+    decoded=""; started=false; lastSym=null; stable=0; idle=0; $('recv').textContent='(listening…)';
+    function loop(){
+      analyser.getFloatFrequencyData(bins);
+      let max=-Infinity,idx=0; for(let i=0;i<bins.length;i++){ if(bins[i]>max){max=bins[i];idx=i;} }
+      const freq=idx*c.sampleRate/analyser.fftSize;
+      if(max>-58){ idle=0; const sym=nearest(freq);
+        if(sym===lastSym) stable++; else { stable=1; lastSym=sym; }
+        if(stable===5){
+          if(sym==='START'){ started=true; decoded=""; $('recv').textContent='[start]'; }
+          else if(sym==='END'){ if(started){ finishDecode(); started=false; } }
+          else if(started && sym!==null){ decoded+=sym; $('recv').textContent = mode()==='enc' ? '[encrypted… '+decoded.length+' chars]' : decoded; }
+        }
+      } else { idle++; if(idle>3){ lastSym=null; stable=0; } }
+      rafId=requestAnimationFrame(loop);
+    }
+    loop(); rxStatus('listening… play a transmission near the mic','ok');
+  }).catch(function(e){ rxStatus('mic denied: '+e,'err'); listening=false; $('rxBtn').textContent='🎙 Start listening'; $('rxBtn').classList.remove('stop'); });
+}
+async function finishDecode(){
+  if(mode()==='enc'){
+    const pass=$('pass').value; if(!pass){ rxStatus('decoded ciphertext — enter passphrase to read','err'); return; }
+    try{ const plain=await decryptFromTokens(decoded, pass); $('recv').textContent=plain; rxStatus('decrypted ✓','ok'); }
+    catch(e){ $('recv').textContent='(wrong passphrase or corrupted)'; rxStatus('decrypt failed','err'); }
+  } else { $('recv').textContent=decoded||'(empty)'; rxStatus('decoded ✓','ok'); }
+}
+function stopListen(){ if(rafId) cancelAnimationFrame(rafId); if(micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream=null; } }
+function toggleListen(){ const b=$('rxBtn');
+  if(!listening){ listening=true; b.textContent='■ Stop listening'; b.classList.add('stop'); startListen(); }
+  else { listening=false; b.textContent='🎙 Start listening'; b.classList.remove('stop'); stopListen(); } }
+
+// ===================== TTS =====================
+function speakMsg(){ const m=$('msg').value.trim(); if(m) say(m); }
+function speakRecv(){ const m=$('recv').textContent.trim(); if(m&&!m.startsWith('(')&&!m.startsWith('[')) say(m); }
+function say(t){ if(!('speechSynthesis' in window)){ alert('No TTS here'); return; } const u=new SpeechSynthesisUtterance(t); u.rate=0.95; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+</script>
+</body>
+</html>
