@@ -7,6 +7,37 @@ transmit / record / share → decode it back to text → optionally speak it alo
 > 🎲 **For fun / puzzles / shared codes.** A toy cipher — not for real account passwords.
 > A recording can be decoded by anyone who has it (plus the passphrase, in encrypted mode).
 
+
+<p align="center">
+  <img src="docs/media/demo_15s.gif" alt="BHNwave demo — pick a voice, transmit tones, decode them back to text" width="820">
+</p>
+
+<p align="center">
+  <b><a href="https://raw.githack.com/FletchEm31/BHNwave/main/BHNwave-Sophisticated.html">▶ Try it in your browser</a></b>
+  &nbsp;·&nbsp; <a href="docs/media/demo_30s.gif">30-second walkthrough (GIF)</a>
+</p>
+
+> [!IMPORTANT]
+> **Not for sale.** BHNwave is a personal passion project — built as a hands-on way to grow my coding skills while exploring audio signal processing and browser cryptography. It's a learning and portfolio project, not a commercial product, and it is not for sale or licensing.
+
+---
+
+## See It In Action
+
+**Pick a voice.** Six sound profiles and four sophistication tiers, from clean sine beeps to a full sci-fi klaxon.
+
+<img src="docs/media/01_home.png" alt="BHNwave home screen" width="820">
+
+<img src="docs/media/02_klaxon_all_out.png" alt="Klaxon profile at the 99.99% tier" width="820">
+
+**Transmit and listen.** Every character becomes its own tone (520–3760 Hz, 90 Hz apart). The listener reads the tones back through the microphone with an FFT.
+
+<img src="docs/media/03_transmit_and_listen.png" alt="Transmitting while listening" width="820">
+
+**Decoded.** The message comes back as text — fully offline, nothing leaves the device.
+
+<img src="docs/media/04_decoded.png" alt="Message decoded from tones" width="820">
+
 ---
 
 ## What's in here
